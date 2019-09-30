@@ -2,8 +2,8 @@
 Lan cheat
 
 # Requirement
-Latest version of obs-studio x64, current [24.0.1]
-Windows 8.0 and later
+* Latest version of obs-studio x64, current [24.0.1]
+* Windows 8.0 and later
 
 # Features
 * GLOW

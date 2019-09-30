@@ -10,7 +10,7 @@ Latest version of obs-studio x64, current [24.0.1]
 * AIMBOT
 * TRIGGERBOT
 
-# Video
+# Youtube Video
 [![IMAGE ALT TEXT](https://i.ytimg.com/vi/HlUdNrAy_pc/maxresdefault.jpg)](https://www.youtube.com/watch?v=HlUdNrAy_pc "G37OBS - LANHACK")
 
 # Image

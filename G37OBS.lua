@@ -302,7 +302,7 @@ function aimbot_get_best_target(angles, player)
 end
 
 function aimbot_aim_at(player, entity, sensitivity, angles, angle)
-    if not is_visible(player, entity) then
+    if cl_aimbot_legit and not is_visible(player, entity) then
         g_target = 0
         return
     end

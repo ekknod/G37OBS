@@ -1,5 +1,5 @@
 # G37OBS
-Lan cheat
+obs-studio plugin for csgo
 
 # Requirement
 * Latest version of obs-studio x64, current [24.0.1]

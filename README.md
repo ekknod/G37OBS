@@ -6,10 +6,14 @@ Lan cheat
 * Windows 8.0 and later
 
 # Features
-* GLOW
-* RCS
-* AIMBOT
-* TRIGGERBOT
+* Recoil Control System
+* Aimbot
+* Triggerbot
+* Glow ESP
+* Interfaces/Virtual Tables
+* NetVars/Offsets
+* ConVars
+* obs-studio game handle
 
 # Youtube Video
 [![IMAGE ALT TEXT](https://i.ytimg.com/vi/HlUdNrAy_pc/maxresdefault.jpg)](https://www.youtube.com/watch?v=HlUdNrAy_pc "G37OBS - LANHACK")

@@ -19,4 +19,4 @@ Lan cheat
 [![IMAGE ALT TEXT](https://i.ytimg.com/vi/HlUdNrAy_pc/maxresdefault.jpg)](https://www.youtube.com/watch?v=HlUdNrAy_pc "G37OBS - LANHACK")
 
 # Image
-![alt text](https://i.imgur.com/HUNElpi.png)
+![alt text](https://i.imgur.com/zGqc2ri.png)

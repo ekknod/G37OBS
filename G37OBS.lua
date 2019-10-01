@@ -76,8 +76,7 @@ size_t strlen (const char*);
 size_t wcslen (const wchar_t*);
 int wcscmp (const wchar_t*, const wchar_t*);
 int strcmp (const char *, const char *);
-void *CreateThread(uint64_t, uint64_t, void(*)(), uint64_t, uint32_t, uint64_t);
-
+uint64_t FindWindowA(const char *, uint64_t);
 double sin(double);
 double cos(double);
 double sqrt(double);
@@ -102,8 +101,6 @@ function script_properties()
     obs.obs_properties_add_float_slider(props, "cl_aimbot_fov", "Aimbot Fov", 0.0, 180.0, 0.25)
     obs.obs_properties_add_int(props, "cl_aimbot_key", "Aimbot Key", 0, 123, 1)
     obs.obs_properties_add_int(props, "cl_triggerbot_key", "Triggerbot Key", 0, 123, 1)
-    obs.obs_properties_add_button(props, "start_button", "Start", callback_start)
-    obs.obs_properties_add_button(props, "stop_button", "Stop", callback_stop)
     return props
 end
 
@@ -111,11 +108,12 @@ function script_load()
     -- 0x1fffff = PROCESS_ALL_ACCESS
     -- 0x000410 = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ
     -- 0x000430 = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_VM_WRITE
-    if cl_glow then
-        patch_flags(0x000430)
-    else
-        patch_flags(0x000410)
-    end
+    -- if cl_glow then
+    --     patch_flags(0x000430)
+    -- else
+    --     patch_flags(0x000410)
+    -- end
+    patch_flags(0x000430)
 end
 
 function script_defaults(settings)
@@ -171,29 +169,13 @@ function script_tick(seconds)
             end
             glow(player)
         end
+    else
+        if u32.FindWindowA("Valve001", 0) ~= 0 then
+            if not initialize() then
+                g_handle = 0
+            end
+        end
     end
-end
-
-function callback_start(props, p)
-    if mem_is_running() then
-        return
-    end
-    if not mem_initialize("csgo.exe") then
-        return
-    end
-    if not vt_initialize() then
-        return
-    end
-    if not nv_initialize() then
-        return
-    end
-    sensitivity = get_convar(0x395d48d4)
-    mp_teammates_are_enemies = get_convar(0x603d532b)
-    k32.Beep(450, 500)
-end
-
-function callback_stop(props, p)
-    g_handle = 0
 end
 
 function glow(player)
@@ -352,27 +334,45 @@ function aimbot_aim_at(player, entity, sensitivity, angles, angle)
     end
 end
 
+function initialize(props, p)
+    if mem_is_running() then
+        return true
+    end
+    if not mem_initialize("csgo.exe") then
+        return false
+    end
+    if not vt_initialize() then
+        return false
+    end
+    if not nv_initialize() then
+        return false
+    end
+    sensitivity = get_convar(0x395d48d4)
+    mp_teammates_are_enemies = get_convar(0x603d532b)
+    if sensitivity == 0 or mp_teammates_are_enemies == 0 then
+        return false
+    end
+    k32.Beep(450, 500)
+    return true
+end
+
 function vt_initialize()
     local table = get_interface_factory(0xe32c87ca)
-    if table == 0 then
-        return false
-    end
+    if table == 0 then return false end
     vt_client = get_interface(table, 0xa3588f60)
+    if vt_client == 0 then return false end
     vt_entity = get_interface(table, 0x3aba23bf)
+    if vt_entity == 0 then return false end
     table = get_interface_factory(0x2a6cf06a)
-    if table == 0 then
-        return false
-    end
+    if table == 0 then return false end
     vt_engine = get_interface(table, 0x6d557021)
+    if vt_engine == 0 then return false end
     table = get_interface_factory(0x3f9458c1)
-    if table == 0 then
-        return false
-    end
+    if table == 0 then return false end
     vt_cvar = get_interface(table, 0xa70d20c6)
+    if vt_cvar == 0 then return false end
     table = get_interface_factory(0xbe7a9f4c)
-    if table == 0 then
-        return false
-    end
+    if table == 0 then return false end
     vt_input = get_interface(table, 0x15813dcd)
     return true
 end
@@ -401,26 +401,45 @@ function nv_initialize()
     a1[8] = 0x78
     a1[9] = 0x00
     local table = get_netvar_table(0x6bc91a61)
+    if table == 0 then return false end
     m_iHealth = get_netvar_offset(table, 0x382a0d22)
+    if m_iHealth == 0 then return false end
     m_vecViewOffset = get_netvar_offset(table, 0xd559c683)
+    if m_vecViewOffset == 0 then return false end
     m_lifeState = get_netvar_offset(table, 0x36e1804)
+    if m_lifeState == 0 then return false end
     m_nTickBase = get_netvar_offset(table, 0x5d7b904)
+    if m_nTickBase == 0 then return false end
     m_vecPunch = get_netvar_offset(table, 0xcb82e6e9) + 0x70
+    if m_vecPunch == 0 then return false end
     m_vecVelocity = get_netvar_offset(table, 0x38157a6)
+    if m_vecVelocity == 0 then return false end
     m_fFlags = get_netvar_offset(table, 0x545667e9)
+    if m_fFlags == 0 then return false end
     table = get_netvar_table(0x23ff2c3a)
+    if table == 0 then return false end
     m_iTeamNum = get_netvar_offset(table, 0x82ce835)
+    if m_iTeamNum == 0 then return false end
     m_vecOrigin = get_netvar_offset(table, 0x10a3868f)
+    if m_vecOrigin == 0 then return false end
     table = get_netvar_table(0x1ca12dde)
+    if table == 0 then return false end
     m_iShotsFired = get_netvar_offset(table, 0x4b93831e)
+    if m_iShotsFired == 0 then return false end
     m_iCrossHairID = get_netvar_offset(table, 0x81f86f46) + 0x5C
+    if m_iCrossHairID == 0 then return false end
     m_iGlowIndex = get_netvar_offset(table, 0xd8343d48) + 0x18
+    if m_iGlowIndex == 0 then return false end
     table = get_netvar_table(0x4d7d72f9)
+    if table == 0 then return false end
     m_dwBoneMatrix = get_netvar_offset(table, 0xc1fb72) + 0x1C
+    if m_dwBoneMatrix == 0 then return false end
     -- table = get_netvar_table(0x956d820a)
     -- m_iItemDefinitionIndex = get_netvar_offset(table, 0x2a0c9a76)
     m_dwGlowObjectManager = mem_scan_pattern(0xe32c87ca, a0, a1, 10)
+    if m_dwGlowObjectManager == 0 then return false end
     m_dwGlowObjectManager = mem_read_i32(m_dwGlowObjectManager + 1) + 4
+    if m_dwGlowObjectManager == 0 then return false end
     m_dwEntityList = vt_entity - (mem_read_i32(get_interface_function(vt_entity, 5) + 0x22) - 0x38)
     m_dwClientState = mem_read_i32(mem_read_i32(get_interface_function(vt_engine, 18) + 0x16))
     m_dwGetLocalPlayer = mem_read_i32(get_interface_function(vt_engine, 12) + 0x16)
@@ -428,7 +447,7 @@ function nv_initialize()
     m_dwMaxClients = mem_read_i32(get_interface_function(vt_engine, 20) + 0x07)
     m_dwState = mem_read_i32(get_interface_function(vt_engine, 26) + 0x07)
     m_dwButton = mem_read_i32(get_interface_function(vt_input, 15) + 0x21D)
-    return 1
+    return true
 end
 
 function mem_initialize(process_name)

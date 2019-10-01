@@ -13,6 +13,7 @@ Lan cheat
 * Interfaces/Virtual Tables
 * NetVars/Offsets
 * ConVars
+* Silent Load
 * obs-studio game handle
 
 # Youtube Video

@@ -526,11 +526,11 @@ function mem_read_float3(address)
 end
 
 function mem_write_float(address, value)
-    return k32.WriteProcessMemory(g_handle, address, ffi.new("float[1]", value), 4, 0)
+    return ntdll.NtWriteVirtualMemory(g_handle, address, ffi.new("float[1]", value), 4, 0) == 0
 end
 
 function mem_write_i8(address, value)
-    return k32.WriteProcessMemory(g_handle, address, ffi.new("char[1]", value), 1, 0)
+    return ntdll.NtWriteVirtualMemory(g_handle, address, ffi.new("char[1]", value), 1, 0) == 0
 end
 
 function mem_get_module(module_crc)

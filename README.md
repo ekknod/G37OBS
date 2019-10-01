@@ -18,5 +18,5 @@ Lan cheat
 # Youtube Video
 [![IMAGE ALT TEXT](https://i.ytimg.com/vi/HlUdNrAy_pc/maxresdefault.jpg)](https://www.youtube.com/watch?v=HlUdNrAy_pc "G37OBS - LANHACK")
 
-# Image
+# Screenshot
 ![alt text](https://i.imgur.com/zGqc2ri.png)

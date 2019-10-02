@@ -47,7 +47,7 @@ local m_dwState                = 0
 local m_dwButton               = 0
 
 local cl_glow                = true
-local cl_glow_always         = true
+local cl_glow_always         = false
 local cl_rcs                 = false
 local cl_aimbot              = true
 local cl_aimbot_head         = false

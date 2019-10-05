@@ -385,7 +385,7 @@ function aimbot_aim_at(player, entity, sensitivity, angles, angle)
 end
 
 
-function initialize(props, p)
+function initialize()
     if mem_is_running() then
         return true
     end

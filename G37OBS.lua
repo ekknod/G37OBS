@@ -13,6 +13,7 @@ local g_target_bone            = 0
 local g_previous_tick          = 0
 local g_old_punch              = {0.00, 0.00, 0.00}
 local g_bones                  = {5, 4, 3, 0, 7, 8}
+local g_mouse1_down            = false
 
 local vt_client                = 0
 local vt_entity                = 0
@@ -50,6 +51,7 @@ local cl_bhop                = false
 local cl_glow                = true
 local cl_glow_always         = false
 local cl_rcs                 = false
+local cl_triggerbot          = true
 local cl_aimbot              = true
 local cl_aimbot_head         = false
 local cl_aimbot_legit        = true
@@ -85,9 +87,11 @@ double atan2(double, double);
 double fabs(double);
 ]]
 
+
 function script_description()
     return "<b>G37OBS</b><hr>ekknod@2019"
 end
+
 
 function script_properties()
     local props = obs.obs_properties_create()
@@ -95,6 +99,7 @@ function script_properties()
     obs.obs_properties_add_bool(props, "cl_glow", "Glow ESP")
     obs.obs_properties_add_bool(props, "cl_glow_always", "Glow ESP [Triggerbot Key]")
     obs.obs_properties_add_bool(props, "cl_rcs", "Recoil Control System")
+    obs.obs_properties_add_bool(props, "cl_triggerbot", "Triggerbot")
     obs.obs_properties_add_bool(props, "cl_aimbot", "Aimbot")
     obs.obs_properties_add_bool(props, "cl_aimbot_head", "Aimbot Head Only")
     obs.obs_properties_add_bool(props, "cl_aimbot_legit", "Aimbot Legit")
@@ -105,6 +110,7 @@ function script_properties()
     obs.obs_properties_add_int(props, "cl_triggerbot_key", "Triggerbot Key", 0, 123, 1)
     return props
 end
+
 
 function script_load()
     -- 0x1fffff = PROCESS_ALL_ACCESS
@@ -118,11 +124,13 @@ function script_load()
     patch_flags(0x000430)
 end
 
+
 function script_defaults(settings)
     obs.obs_data_set_default_bool(settings, "cl_bhop", cl_bhop)
     obs.obs_data_set_default_bool(settings, "cl_glow", cl_glow)
     obs.obs_data_set_default_bool(settings, "cl_glow_always", cl_glow_always)
     obs.obs_data_set_default_bool(settings, "cl_rcs", cl_rcs)
+    obs.obs_data_set_default_bool(settings, "cl_triggerbot", cl_triggerbot)
     obs.obs_data_set_default_bool(settings, "cl_aimbot", cl_aimbot)
     obs.obs_data_set_default_bool(settings, "cl_aimbot_head", cl_aimbot_head)
     obs.obs_data_set_default_bool(settings, "cl_aimbot_legit", cl_aimbot_legit)
@@ -133,11 +141,13 @@ function script_defaults(settings)
     obs.obs_data_set_default_int(settings, "cl_triggerbot_key", cl_triggerbot_key)
 end
 
+
 function script_update(settings)
     cl_bhop = obs.obs_data_get_bool(settings, "cl_bhop")
     cl_glow = obs.obs_data_get_bool(settings, "cl_glow")
     cl_glow_always = obs.obs_data_get_bool(settings, "cl_glow_always")
     cl_rcs = obs.obs_data_get_bool(settings, "cl_rcs")
+    cl_triggerbot = obs.obs_data_get_bool(settings, "cl_triggerbot")
     cl_aimbot = obs.obs_data_get_bool(settings, "cl_aimbot")
     cl_aimbot_head = obs.obs_data_get_bool(settings, "cl_aimbot_head")
     cl_aimbot_legit = obs.obs_data_get_bool(settings, "cl_aimbot_legit")
@@ -148,6 +158,7 @@ function script_update(settings)
     cl_triggerbot_key = obs.obs_data_get_int(settings, "cl_triggerbot_key")
 end
 
+
 function script_tick(seconds)
     if mem_is_running() then
         if not is_in_game() then
@@ -155,25 +166,46 @@ function script_tick(seconds)
         end
         local player = get_client_entity(get_local_player())
         local view_angle = get_view_angles()
-        local fl_sensitivity = get_float(sensitivity)
-        if is_button_down(cl_triggerbot_key) == 1 then
-            triggerbot(player)
-        end
-        if cl_bhop and is_button_down(65) == 1 then
-            if (bit.band(get_flags(player), 1) == 1) then
-                mem_write_i32(m_dwForceJump, 5)
+        local fl_sensitivity = get_float(sensitivity)      
+        if cl_triggerbot then
+            if is_button_down(cl_triggerbot_key) == 1 then
+                if get_valid_cross_id(player) ~= 0 then
+                    u32.mouse_event(0x0002, 0, 0, 0, 0)
+                    g_mouse1_down = true
+                else
+                    u32.mouse_event(0x0004, 0, 0, 0, 0)
+                    g_mouse1_down = false
+                end
             else
-                mem_write_i32(m_dwForceJump, 4)
+                if g_mouse1_down then
+                    u32.mouse_event(0x0004, 0, 0, 0, 0)
+                    g_mouse1_down = false
+                end
             end
         end
-        if cl_aimbot and is_button_down(cl_aimbot_key) == 1 then
-            aimbot(player, view_angle, fl_sensitivity)
-        else
-            g_target = 0
+
+        if cl_bhop then
+            if is_button_down(65) == 1 then
+                if (bit.band(get_flags(player), 1) == 1) then
+                    mem_write_i32(m_dwForceJump, 5)
+                else
+                    mem_write_i32(m_dwForceJump, 4)
+                end
+            end
         end
+
+        if cl_aimbot then
+            if is_button_down(cl_aimbot_key) == 1 then
+                aimbot(player, view_angle, fl_sensitivity)
+            else
+                g_target = 0
+            end
+        end
+
         if cl_rcs then
             rcs(player, view_angle, fl_sensitivity)
         end
+
         if cl_glow then
             if cl_glow_always and is_button_down(cl_triggerbot_key) == 0 then
                 return
@@ -188,6 +220,7 @@ function script_tick(seconds)
         end
     end
 end
+
 
 function glow(player)
     local glow_pointer = mem_read_i32(m_dwGlowObjectManager)
@@ -212,6 +245,7 @@ function glow(player)
     end
 end
 
+
 function rcs(player, view_angle, sensitivity)
     local a0 = get_vec_punch(player)
     if get_shots_fired(player) > 1 then
@@ -222,6 +256,7 @@ function rcs(player, view_angle, sensitivity)
     end
     g_old_punch = a0
 end
+
 
 function aimbot(player, view_angle, sensitivity)
     if not is_valid(g_target) and not aimbot_get_best_target(view_angle, player) then
@@ -235,17 +270,19 @@ function aimbot(player, view_angle, sensitivity)
         aimbot_get_target_angle(player, g_target, g_target_bone))
 end
 
-function triggerbot(player)
+
+function get_valid_cross_id(player)
     local index = get_cross_index(player)
     if index == 0 then
-        return
+        return 0
     end
     local entity = get_client_entity(index - 1)
     if get_team_num(player) ~= get_team_num(entity) and get_health(entity) > 0 then
-        u32.mouse_event(0x0002, 0, 0, 0, 0)
-        u32.mouse_event(0x0004, 0, 0, 0, 0)
+        return index
     end
+    return 0
 end
+
 
 function aimbot_get_target_angle(player, target, id)
     local m = get_bone_pos(target, id)
@@ -262,6 +299,7 @@ function aimbot_get_target_angle(player, target, id)
     end
     return vec_clamp(c)
 end
+
 
 function aimbot_get_best_target(angles, player)
     local best_fov = 9999.00
@@ -293,6 +331,7 @@ function aimbot_get_best_target(angles, player)
     end
     return best_fov ~= 9999.00
 end
+
 
 function aimbot_aim_at(player, entity, sensitivity, angles, angle)
     if cl_aimbot_legit and not is_visible(player, entity) then
@@ -345,6 +384,7 @@ function aimbot_aim_at(player, entity, sensitivity, angles, angle)
     end
 end
 
+
 function initialize(props, p)
     if mem_is_running() then
         return true
@@ -367,6 +407,7 @@ function initialize(props, p)
     return true
 end
 
+
 function vt_initialize()
     local table = get_interface_factory("c\0l\0i\0e\0n\0t\0_\0p\0a\0n\0o\0r\0a\0m\0a\0.\0d\0l\0l\0\0")
     if table == 0 then return false end
@@ -388,6 +429,7 @@ function vt_initialize()
     if vt_input == 0 then return false end
     return true
 end
+
 
 function nv_initialize()
     local a0 = ffi.new("unsigned char[?]", 10)
@@ -490,6 +532,7 @@ function nv_initialize()
     return true
 end
 
+
 function mem_initialize(process_name)
     g_handle = get_process_handle(process_name)
     if g_handle == 0 then
@@ -504,6 +547,7 @@ function mem_initialize(process_name)
     end
     return true
 end
+
 
 function mem_is_running()
     local buffer = ffi.new("uint32_t[1]", 0)
@@ -596,6 +640,7 @@ function mem_get_module(name)
     return 0
 end
 
+
 function mem_get_export(module, name)
     if module == 0 then
         return 0
@@ -613,6 +658,7 @@ function mem_get_export(module, name)
     end
     return 0
 end
+
 
 function mem_scan_pattern(module_name, pattern, mask, length)
     local a0 = mem_get_module(module_name)
@@ -635,10 +681,12 @@ function mem_scan_pattern(module_name, pattern, mask, length)
     return 0
 end
 
+
 function get_interface_factory(module_name)
     local a0 = mem_get_export(mem_get_module(module_name), "CreateInterface")
     return mem_read_i32(mem_read_i32(a0 - 0x6A))
 end
+
 
 function get_interface(interface_factory, name)
     while interface_factory ~= 0 do
@@ -651,9 +699,11 @@ function get_interface(interface_factory, name)
     return 0
 end
 
+
 function get_interface_function(interface, index)
     return mem_read_i32(mem_read_i32(interface) + index * 4)
 end
+
 
 function get_netvar_table(name)
     local a0 = mem_read_i32(mem_read_i32(get_interface_function(vt_client, 8) + 1))
@@ -668,6 +718,7 @@ function get_netvar_table(name)
     return 0
 end
 
+
 function __get_netvar_offset_ex(netvar_table, name)
     local a0 = 0
     for a1 = 0, mem_read_i32(netvar_table + 0x4), 1 do
@@ -680,6 +731,7 @@ function __get_netvar_offset_ex(netvar_table, name)
     end
     return a0
 end
+
 
 function get_netvar_offset(netvar_table, name)
     local a0 = 0
@@ -701,6 +753,7 @@ function get_netvar_offset(netvar_table, name)
     return a0
 end
 
+
 function get_convar(name)
     local a0 = mem_read_i32(mem_read_i32(mem_read_i32(vt_cvar + 0x34)) + 0x4)
     while a0 ~= 0 do
@@ -713,12 +766,14 @@ function get_convar(name)
     return 0
 end
 
+
 function get_int(convar)
     local a0 = ffi.new("uint32_t[1]", 0)
     local a1 = bit.bxor(mem_read_i32(convar + 0x30), convar)
     ntdll.memcpy(a0, ffi.new("uint32_t[1]", a1), 4)
     return a0[0]
 end
+
 
 function get_float(convar)
     local a0 = ffi.new("float[1]", 0)
@@ -727,22 +782,27 @@ function get_float(convar)
     return a0[0]
 end
 
+
 function is_button_down(button)
     a0 = mem_read_i32(vt_input + (bit.rshift(button, 5) * 4) + m_dwButton)
     return bit.band((bit.rshift(a0, (bit.band(button, 31)))), 1)
 end
 
+
 function is_in_game()
     return mem_read_i8(m_dwClientState + m_dwState) == 6
 end
+
 
 function get_local_player()
     return mem_read_i32(m_dwClientState + m_dwGetLocalPlayer)
 end
 
+
 function get_max_clients()
     return mem_read_i32(m_dwClientState + m_dwMaxClients)
 end
+
 
 function get_view_angles()
     return {
@@ -752,9 +812,11 @@ function get_view_angles()
     }
 end
 
+
 function get_client_entity(index)
     return mem_read_i32(m_dwEntityList + index * 0x10)
 end
+
 
 function is_visible(player, entity)
     local mask = mem_read_i32(entity + 0x980)
@@ -762,33 +824,41 @@ function is_visible(player, entity)
     return (bit.band(mask, (bit.lshift(1, base)))) > 0
 end
 
+
 function get_team_num(entity)
     return mem_read_i32(entity + m_iTeamNum)
 end
+
 
 function get_health(entity)
     return mem_read_i32(entity + m_iHealth)
 end
 
+
 function get_flags(entity)
     return mem_read_i32(entity + m_fFlags)
 end
+
 
 function get_life_state(entity)
     return mem_read_i32(entity + m_lifeState)
 end
 
+
 function get_tick_count(entity)
     return mem_read_i32(entity + m_nTickBase)
 end
+
 
 function get_shots_fired(entity)
     return mem_read_i32(entity + m_iShotsFired)
 end
 
+
 function get_cross_index(entity)
     return mem_read_i32(entity + m_iCrossHairID)
 end
+
 
 function get_origin(entity)
     return {
@@ -798,6 +868,7 @@ function get_origin(entity)
     }
 end
 
+
 function get_vec_view(entity)
     return {
         mem_read_float(entity + m_vecViewOffset),
@@ -806,17 +877,20 @@ function get_vec_view(entity)
     }
 end
 
+
 function get_eye_pos(entity)
     local v = get_vec_view(entity)
     local o = get_origin(entity)
     return {v[1] + o[1], v[2] + o[2], v[3] + o[3]}
 end
 
+
 function get_velocity(entity)
     local x = mem_read_float(entity + m_vecVelocity)
     local y = mem_read_float(entity + m_vecVelocity + 4)
     return ntdll.sqrt(x * x + y * y)
 end
+
 
 function get_vec_punch(entity)
     return {
@@ -825,6 +899,7 @@ function get_vec_punch(entity)
         mem_read_float(entity + m_vecPunch + 8)
     }
 end
+
 
 function get_bone_pos(entity, index)
     local a0 = 0x30 * index
@@ -836,6 +911,7 @@ function get_bone_pos(entity, index)
     }
 end
 
+
 function is_valid(entity)
     if entity == 0 then
         return false
@@ -844,12 +920,14 @@ function is_valid(entity)
     return get_life_state(entity) == 0 and health > 0 and health < 1337
 end
 
+
 -- fuck you obs --
 -- https://github.com/obsproject/obs-studio/commit/0acf86ba046efd4bc37ed9931cc2c0f4bc74f9dd#diff-154ed4865eac33aca4ca5db04f5fd70c
 function patch_flags(access_mask)
     local address = k32.GetModuleHandleA("win-capture.dll") + 0x58AE
     return k32.WriteProcessMemory(-1, address, ffi.new("int[1]", access_mask), 4, 0)
 end
+
 
 -- find process handle --
 function get_process_handle(process_name)
@@ -865,6 +943,7 @@ function get_process_handle(process_name)
     end
     return 0
 end
+
 
 -- find process peb --
 function get_process_peb(process_handle, wow64)
@@ -882,23 +961,28 @@ function get_process_peb(process_handle, wow64)
     return 0
 end
 
+
 function sincos(radians)
     return {ntdll.sin(radians), ntdll.cos(radians)}
 end
+
 
 function rad_to_deg(rad)
     return rad * 3.141592654
 end
 
+
 function deg_to_rad(deg)
     return deg * 0.017453293
 end
+
 
 function angle_vec(angles)
     local s = sincos(deg_to_rad(angles[1]))
     local y = sincos(deg_to_rad(angles[2]))
     return {s[2] * y[2], s[2] * y[1], -s[1]}
 end
+
 
 function angle_normalize(angles)
     local radius = 1.0 / (ntdll.sqrt(angles[1] * angles[1] + angles[2] * angles[2] + angles[3] * angles[3]) + 1.192092896e-07)
@@ -907,6 +991,7 @@ function angle_normalize(angles)
     angles[3] = angles[3] * radius
     return angles
 end
+
 
 function vec_angles(forward)
     local tmp, yaw, pitch
@@ -931,6 +1016,7 @@ function vec_angles(forward)
     return {pitch, yaw, 0.00}
 end
 
+
 function vec_clamp(angles)
     if angles[1] > 89.0 and angles[1] <= 180.0 then
         angles[1] = 89.0
@@ -945,16 +1031,20 @@ function vec_clamp(angles)
     return angles
 end
 
+
 function vec_dot(v0, v1)
     return v0[1] * v1[1] + v0[2] * v1[2] + v0[3] * v1[3]
 end
 
+
 function vec_length(v)
     return v[1] * v[1] + v[2] * v[2] + v[3] * v[3]
 end
+
 
 function get_fov(p0, p1)
     local a0 = angle_vec(p0)
     local a1 = angle_vec(p1)
     return rad_to_deg(math.acos(vec_dot(a0, a1) / vec_length(a0)))
 end
+

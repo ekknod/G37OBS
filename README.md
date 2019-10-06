@@ -9,6 +9,7 @@ obs-studio plugin for csgo
 * Aimbot
 * Triggerbot
 * Glow ESP
+* Bhop
 * Interfaces/Virtual Tables
 * NetVars/Offsets
 * ConVars

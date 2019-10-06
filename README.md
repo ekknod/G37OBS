@@ -19,4 +19,4 @@ obs-studio plugin for csgo
 [![IMAGE ALT TEXT](https://i.ytimg.com/vi/HlUdNrAy_pc/maxresdefault.jpg)](https://www.youtube.com/watch?v=HlUdNrAy_pc "G37OBS - LANHACK - OBS plugin")
 
 # Screenshot
-![alt text](https://i.imgur.com/zGqc2ri.png)
+![alt text](https://i.imgur.com/t9R5OC7.png)

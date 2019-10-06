@@ -92,7 +92,7 @@ double fabs(double);
 
 
 function script_description()
-    return "<b>G37OBS</b><hr>ekknod@2019"
+    return "<b>G37OBS v1.12</b><hr>ekknod@2019"
 end
 
 

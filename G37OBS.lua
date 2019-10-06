@@ -544,9 +544,13 @@ function nv_initialize()
     m_dwBoneMatrix = get_netvar_offset(table, 0x4fcc8600) + 0x1C
     if m_dwBoneMatrix == 0 then return false end
     m_dwGlowObjectManager = mem_scan_pattern(0x5066ed75, a0, a1, 10)
+    if m_dwGlowObjectManager == 0 then return false end
     m_dwGlowObjectManager = mem_read_i32(m_dwGlowObjectManager + 1) + 4
+    if m_dwGlowObjectManager == 0 then return false end
     m_dwForceJump = mem_scan_pattern(0x5066ed75, a2, a3, 14)
+    if m_dwForceJump == 0 then return false end
     m_dwForceJump = mem_read_i32(m_dwForceJump + 2)
+    if m_dwForceJump == 0 then return false end
     m_dwEntityList = vt_entity - (mem_read_i32(get_interface_function(vt_entity, 5) + 0x22) - 0x38)
     m_dwClientState = mem_read_i32(mem_read_i32(get_interface_function(vt_engine, 18) + 0x16))
     m_dwGetLocalPlayer = mem_read_i32(get_interface_function(vt_engine, 12) + 0x16)
@@ -645,15 +649,15 @@ end
 
 
 function mem_write_float(address, value)
-    return ffi.C.WriteProcessMemory(g_handle, address, ffi.new("float[1]", value), 4, 0)
+    return ntdll.NtWriteVirtualMemory(g_handle, address, ffi.new("float[1]", value), 4, 0) == 0
 end
 
 function mem_write_i8(address, value)
-    return ffi.C.WriteProcessMemory(g_handle, address, ffi.new("char[1]", value), 1, 0)
+    return ntdll.NtWriteVirtualMemory(g_handle, address, ffi.new("char[1]", value), 1, 0) == 0
 end
 
 function mem_write_i32(address, value)
-    return ffi.C.WriteProcessMemory(g_handle, address, ffi.new("int[1]", value), 4, 0)
+    return ntdll.NtWriteVirtualMemory(g_handle, address, ffi.new("int[1]", value), 4, 0) == 0
 end
 
 

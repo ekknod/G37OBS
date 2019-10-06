@@ -57,7 +57,7 @@ local cl_rcs                 = false
 local cl_triggerbot          = true
 local cl_aimbot              = true
 local cl_aimbot_head         = false
-local cl_aimbot_legit        = true
+local cl_aimbot_legit        = false
 local cl_aimbot_rcs          = true
 local cl_aimbot_smooth       = 4.5
 local cl_aimbot_fov          = 1.0 / 180.0
@@ -234,6 +234,7 @@ function script_tick(seconds)
             glow(player)
         end
     else
+        g_target = 0
         g_previous_tick = 0
         if u32.FindWindowA("Valve001", 0) ~= 0 then
             if not initialize() then
@@ -579,11 +580,13 @@ function mem_is_running()
     return buffer[0] == 0x103
 end
 
+
 function mem_read_bytes(address, length)
     local buffer = ffi.new("unsigned char[?]", length)
     ntdll.NtReadVirtualMemory(g_handle, address, buffer, length, 0)
     return buffer
 end
+
 
 function mem_read_i8_buffer(address)
     local buffer = ffi.new("char[120]", 0)
@@ -591,11 +594,13 @@ function mem_read_i8_buffer(address)
     return buffer
 end
 
+
 function mem_read_i16_buffer(address)
     local buffer = ffi.new("short[120]", 0)
     ntdll.NtReadVirtualMemory(g_handle, address, buffer, 240, 0)
     return buffer
 end
+
 
 function mem_read_i8(address)
     local buffer = ffi.new("uint8_t[1]", 0)
@@ -603,11 +608,13 @@ function mem_read_i8(address)
     return buffer[0]
 end
 
+
 function mem_read_i16(address)
     local buffer = ffi.new("uint16_t[1]", 0)
     ntdll.NtReadVirtualMemory(g_handle, address, buffer, 2, 0)
     return buffer[0]
 end
+
 
 function mem_read_i32(address)
     local buffer = ffi.new("uint32_t[1]", 0)
@@ -615,11 +622,13 @@ function mem_read_i32(address)
     return buffer[0]
 end
 
+
 function mem_read_i64(address, length)
     local buffer = ffi.new("uint64_t[1]", 0)
     ntdll.NtReadVirtualMemory(g_handle, address, buffer, length or 8, 0)
     return buffer[0]
 end
+
 
 function mem_read_float(address)
     local buffer = ffi.new("float[1]", 0)
@@ -627,22 +636,24 @@ function mem_read_float(address)
     return buffer[0]
 end
 
+
 function mem_read_float3(address)
     local buffer = ffi.new("float[3]", 0)
     ntdll.NtReadVirtualMemory(g_handle, address, buffer, 4, 0)
     return buffer
 end
 
+
 function mem_write_float(address, value)
-    return ntdll.NtWriteVirtualMemory(g_handle, address, ffi.new("float[1]", value), 4, 0) == 0
+    return ffi.C.WriteProcessMemory(g_handle, address, ffi.new("float[1]", value), 4, 0)
 end
 
 function mem_write_i8(address, value)
-    return ntdll.NtWriteVirtualMemory(g_handle, address, ffi.new("char[1]", value), 1, 0) == 0
+    return ffi.C.WriteProcessMemory(g_handle, address, ffi.new("char[1]", value), 1, 0)
 end
 
 function mem_write_i32(address, value)
-    return ntdll.NtWriteVirtualMemory(g_handle, address, ffi.new("int[1]", value), 4, 0) == 0
+    return ffi.C.WriteProcessMemory(g_handle, address, ffi.new("int[1]", value), 4, 0)
 end
 
 

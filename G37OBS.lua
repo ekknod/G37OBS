@@ -192,19 +192,6 @@ function script_tick(seconds)
             end
         end
 
-        if cl_radar then
-            for i = 0, get_max_clients(), 1 do
-                local entity = get_client_entity(i)
-                if is_valid(entity) then
-                    if get_int(mp_teammates_are_enemies) == 0 and get_team_num(player) == get_team_num(entity) then
-                        goto continue
-                    end
-                    mem_write_i8(entity + m_bSpotted, 1)
-                end
-                ::continue::
-            end
-        end
-
         if cl_bhop then
             if is_button_down(65) == 1 then
                 if (bit.band(get_flags(player), 1) == 1) then
@@ -227,11 +214,8 @@ function script_tick(seconds)
             rcs(player, view_angle, fl_sensitivity)
         end
 
-        if cl_glow then
-            if cl_glow_always and is_button_down(cl_triggerbot_key) == 0 then
-                return
-            end
-            glow(player)
+        if cl_glow or cl_radar then
+            glow_radar(player)
         end
     else
         g_target = 0
@@ -245,7 +229,7 @@ function script_tick(seconds)
 end
 
 
-function glow(player)
+function glow_radar(player)
     local glow_pointer = mem_read_i32(m_dwGlowObjectManager)
     for i = 0, get_max_clients(), 1 do
         local entity = get_client_entity(i)
@@ -253,16 +237,24 @@ function glow(player)
             if get_int(mp_teammates_are_enemies) == 0 and get_team_num(player) == get_team_num(entity) then
                 goto continue
             end
-            -- another way
-            -- ( entity + 0x3960 ) = flDetectedByEnemySensorTime
-            local entity_health = get_health(entity) / 100.0
-            local index = mem_read_i32(entity + m_iGlowIndex) * 0x38
-            mem_write_float(glow_pointer + index + 0x04, 1.0 - entity_health)  -- r
-            mem_write_float(glow_pointer + index + 0x08, entity_health)        -- g
-            mem_write_float(glow_pointer + index + 0x0C, 0.0)                  -- b
-            mem_write_float(glow_pointer + index + 0x10, 0.8)                  -- a
-            mem_write_i8(glow_pointer + index + 0x24, 1)
-            mem_write_i8(glow_pointer + index + 0x25, 0)
+
+            if cl_radar then
+                mem_write_i8(entity + m_bSpotted, 1)
+            end
+
+            if cl_glow then
+                if cl_glow_always and is_button_down(cl_triggerbot_key) == 0 then
+                    goto continue
+                end
+                local entity_health = get_health(entity) / 100.0
+                local index = mem_read_i32(entity + m_iGlowIndex) * 0x38
+                mem_write_float(glow_pointer + index + 0x04, 1.0 - entity_health)  -- r
+                mem_write_float(glow_pointer + index + 0x08, entity_health)        -- g
+                mem_write_float(glow_pointer + index + 0x0C, 0.0)                  -- b
+                mem_write_float(glow_pointer + index + 0x10, 0.8)                  -- a
+                mem_write_i8(glow_pointer + index + 0x24, 1)
+                mem_write_i8(glow_pointer + index + 0x25, 0)
+            end
         end
         ::continue::
     end

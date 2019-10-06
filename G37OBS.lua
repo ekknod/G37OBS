@@ -49,21 +49,139 @@ local m_dwMaxClients           = 0
 local m_dwState                = 0
 local m_dwButton               = 0
 
-local cl_bhop                = false
-local cl_radar               = true
-local cl_glow                = true
-local cl_glow_always         = false
-local cl_rcs                 = false
-local cl_triggerbot          = true
-local cl_aimbot              = true
-local cl_aimbot_head         = false
-local cl_aimbot_legit        = false
-local cl_aimbot_rcs          = true
-local cl_aimbot_smooth       = 4.5
-local cl_aimbot_fov          = 1.0 / 180.0
-local cl_aimbot_key          = 107
-local cl_triggerbot_key      = 111
+local cl_bhop                  = false
+local cl_radar                 = true
+local cl_glow                  = true
+local cl_glow_hold             = false
+local cl_rcs                   = false
+local cl_triggerbot            = true
+local cl_aimbot                = true
+local cl_aimbot_head           = false
+local cl_aimbot_legit          = false
+local cl_aimbot_rcs            = true
+local cl_aimbot_smooth         = 4.5
+local cl_aimbot_fov            = 1.0 / 180.0
+local cl_aimbot_key            = 107
+local cl_triggerbot_key        = 111
+local cl_glow_key              = 111
+local cl_bhop_key              = 65
 
+
+local g_key_list = {
+    {"KEY_0", 1},
+    {"KEY_1", 2},
+    {"KEY_2", 3},
+    {"KEY_3", 4},
+    {"KEY_4", 5},
+    {"KEY_5", 6},
+    {"KEY_6", 7},
+    {"KEY_7", 8},
+    {"KEY_8", 9},
+    {"KEY_9", 10},
+    {"KEY_A", 11},
+    {"KEY_B", 12},
+    {"KEY_C", 13},
+    {"KEY_D", 14},
+    {"KEY_E", 15},
+    {"KEY_F", 16},
+    {"KEY_G", 17},
+    {"KEY_H", 18},
+    {"KEY_I", 19},
+    {"KEY_J", 20},
+    {"KEY_K", 21},
+    {"KEY_L", 22},
+    {"KEY_M", 23},
+    {"KEY_N", 24},
+    {"KEY_O", 25},
+    {"KEY_P", 26},
+    {"KEY_Q", 27},
+    {"KEY_R", 28},
+    {"KEY_S", 29},
+    {"KEY_T", 30},
+    {"KEY_U", 31},
+    {"KEY_V", 32},
+    {"KEY_W", 33},
+    {"KEY_X", 34},
+    {"KEY_Y", 35},
+    {"KEY_Z", 36},
+    {"KEY_PAD_0", 37},
+    {"KEY_PAD_1", 38},
+    {"KEY_PAD_2", 39},
+    {"KEY_PAD_3", 40},
+    {"KEY_PAD_4", 41},
+    {"KEY_PAD_5", 42},
+    {"KEY_PAD_6", 43},
+    {"KEY_PAD_7", 44},
+    {"KEY_PAD_8", 45},
+    {"KEY_PAD_9", 46},
+    {"KEY_PAD_DIVIDE", 47},
+    {"KEY_PAD_MULTIPLY", 48},
+    {"KEY_PAD_MINUS", 49},
+    {"KEY_PAD_PLUS", 50},
+    {"KEY_PAD_ENTER", 51},
+    {"KEY_PAD_DECIMAL", 52},
+    {"KEY_LBRACKET", 53},
+    {"KEY_RBRACKET", 54},
+    {"KEY_SEMICOLON", 55},
+    {"KEY_APOSTROPHE", 56},
+    {"KEY_BACKQUOTE", 57},
+    {"KEY_COMMA", 58},
+    {"KEY_PERIOD", 59},
+    {"KEY_SLASH", 60},
+    {"KEY_BACKSLASH", 61},
+    {"KEY_MINUS", 62},
+    {"KEY_EQUAL", 63},
+    {"KEY_ENTER", 64},
+    {"KEY_SPACE", 65},
+    {"KEY_BACKSPACE", 66},
+    {"KEY_TAB", 67},
+    {"KEY_CAPSLOCK", 68},
+    {"KEY_NUMLOCK", 69},
+    {"KEY_ESCAPE", 70},
+    {"KEY_SCROLLLOCK", 71},
+    {"KEY_INSERT", 72},
+    {"KEY_DELETE", 73},
+    {"KEY_HOME", 74},
+    {"KEY_END", 75},
+    {"KEY_PAGEUP", 76},
+    {"KEY_PAGEDOWN", 77},
+    {"KEY_BREAK", 78},
+    {"KEY_LSHIFT", 79},
+    {"KEY_RSHIFT", 80},
+    {"KEY_LALT", 81},
+    {"KEY_RALT", 82},
+    {"KEY_LCONTROL", 83},
+    {"KEY_RCONTROL", 84},
+    {"KEY_LWIN", 85},
+    {"KEY_RWIN", 86},
+    {"KEY_APP", 87},
+    {"KEY_UP", 88},
+    {"KEY_LEFT", 89},
+    {"KEY_DOWN", 90},
+    {"KEY_RIGHT", 91},
+    {"KEY_F1", 92},
+    {"KEY_F2", 93},
+    {"KEY_F3", 94},
+    {"KEY_F4", 95},
+    {"KEY_F5", 96},
+    {"KEY_F6", 97},
+    {"KEY_F7", 98},
+    {"KEY_F8", 99},
+    {"KEY_F9", 100},
+    {"KEY_F10", 101},
+    {"KEY_F11", 102},
+    {"KEY_F12", 103},
+    {"KEY_CAPSLOCKTOGGLE", 104},
+    {"KEY_NUMLOCKTOGGLE", 105},
+    {"KEY_SCROLLLOCKTOGGLE", 106},
+    {"MOUSE_LEFT", 107},
+    {"MOUSE_RIGHT", 108},
+    {"MOUSE_MIDDLE", 109},
+    {"MOUSE_4", 110},
+    {"MOUSE_5", 111},
+    {"MOUSE_WHEEL_UP", 112},
+    {"MOUSE_WHEEL_DOWN", 113}
+}
 
 -- C imports --
 ffi.cdef[[
@@ -92,7 +210,7 @@ double fabs(double);
 
 
 function script_description()
-    return "<b>G37OBS v1.12</b><hr>ekknod@2019"
+    return "<b>G37OBS v1.13</b><hr>ekknod@2019"
 end
 
 
@@ -101,17 +219,30 @@ function script_properties()
     obs.obs_properties_add_bool(props, "cl_bhop", "Bhop")
     obs.obs_properties_add_bool(props, "cl_radar", "Radar")
     obs.obs_properties_add_bool(props, "cl_glow", "Glow ESP")
-    obs.obs_properties_add_bool(props, "cl_glow_always", "Glow ESP [Triggerbot Key]")
+    obs.obs_properties_add_bool(props, "cl_glow_hold", "Glow ESP [Hold Mode]")
     obs.obs_properties_add_bool(props, "cl_rcs", "Recoil Control System")
     obs.obs_properties_add_bool(props, "cl_triggerbot", "Triggerbot")
     obs.obs_properties_add_bool(props, "cl_aimbot", "Aimbot")
     obs.obs_properties_add_bool(props, "cl_aimbot_head", "Aimbot Head Only")
     obs.obs_properties_add_bool(props, "cl_aimbot_legit", "Aimbot Legit")
     obs.obs_properties_add_bool(props, "cl_aimbot_rcs", "Aimbot No Recoil")
-    obs.obs_properties_add_float_slider(props, "cl_aimbot_smooth", "Aimbot Smooth", 0.0, 1000.0, 0.25)
+    obs.obs_properties_add_float_slider(props, "cl_aimbot_smooth", "Aimbot Smooth", 0.0, 50.0, 0.25)
     obs.obs_properties_add_float_slider(props, "cl_aimbot_fov", "Aimbot Fov", 0.0, 180.0, 0.25)
-    obs.obs_properties_add_int(props, "cl_aimbot_key", "Aimbot Key", 0, 123, 1)
-    obs.obs_properties_add_int(props, "cl_triggerbot_key", "Triggerbot Key", 0, 123, 1)
+
+    local aimbot_keys = obs.obs_properties_add_list(props,  "cl_aimbot_key",
+        "Aimbot", obs.OBS_COMBO_TYPE_LIST, obs.OBS_COMBO_FORMAT_STRING)
+    local trigger_keys = obs.obs_properties_add_list(props,  "cl_triggerbot_key",
+        "Triggerbot", obs.OBS_COMBO_TYPE_LIST, obs.OBS_COMBO_FORMAT_STRING)
+    local glow_key = obs.obs_properties_add_list(props,  "cl_glow_key",
+        "Glow ESP", obs.OBS_COMBO_TYPE_LIST, obs.OBS_COMBO_FORMAT_STRING)
+    local bhop_keys = obs.obs_properties_add_list(props,  "cl_bhop_key",
+        "Bhop", obs.OBS_COMBO_TYPE_LIST, obs.OBS_COMBO_FORMAT_STRING)
+    for i = 1, #g_key_list, 1 do
+        obs.obs_property_list_add_string(aimbot_keys, g_key_list[i][1], g_key_list[i][1])
+        obs.obs_property_list_add_string(trigger_keys, g_key_list[i][1], g_key_list[i][1])
+        obs.obs_property_list_add_string(glow_key, g_key_list[i][1], g_key_list[i][1])
+        obs.obs_property_list_add_string(bhop_keys, g_key_list[i][1], g_key_list[i][1])
+    end
     return props
 end
 
@@ -133,7 +264,7 @@ function script_defaults(settings)
     obs.obs_data_set_default_bool(settings, "cl_bhop", cl_bhop)
     obs.obs_data_set_default_bool(settings, "cl_radar", cl_radar)
     obs.obs_data_set_default_bool(settings, "cl_glow", cl_glow)
-    obs.obs_data_set_default_bool(settings, "cl_glow_always", cl_glow_always)
+    obs.obs_data_set_default_bool(settings, "cl_glow_hold", cl_glow_hold)
     obs.obs_data_set_default_bool(settings, "cl_rcs", cl_rcs)
     obs.obs_data_set_default_bool(settings, "cl_triggerbot", cl_triggerbot)
     obs.obs_data_set_default_bool(settings, "cl_aimbot", cl_aimbot)
@@ -142,16 +273,32 @@ function script_defaults(settings)
     obs.obs_data_set_default_bool(settings, "cl_aimbot_rcs", cl_aimbot_rcs)
     obs.obs_data_set_default_double(settings, "cl_aimbot_smooth", cl_aimbot_smooth)
     obs.obs_data_set_default_double(settings, "cl_aimbot_fov", 1.0)
-    obs.obs_data_set_default_int(settings, "cl_aimbot_key", cl_aimbot_key)
-    obs.obs_data_set_default_int(settings, "cl_triggerbot_key", cl_triggerbot_key)
+    obs.obs_data_set_default_string(settings,
+        "cl_aimbot_key", g_key_list[cl_aimbot_key][1])
+    obs.obs_data_set_default_string(settings,
+        "cl_triggerbot_key", g_key_list[cl_triggerbot_key][1])
+    obs.obs_data_set_default_string(settings,
+        "cl_glow_key", g_key_list[cl_glow_key][1])
+    obs.obs_data_set_default_string(settings,
+        "cl_bhop_key", g_key_list[cl_bhop_key][1])
 end
 
 
-function script_update(settings)
+function get_key_from_list(name)
+    for i = 1, #g_key_list, 1 do
+        if g_key_list[i][1] == name then
+            return g_key_list[i][2]
+        end
+    end
+    return 0
+end
+
+
+function script_update(settings)    
     cl_bhop = obs.obs_data_get_bool(settings, "cl_bhop")
     cl_radar = obs.obs_data_get_bool(settings, "cl_radar")
     cl_glow = obs.obs_data_get_bool(settings, "cl_glow")
-    cl_glow_always = obs.obs_data_get_bool(settings, "cl_glow_always")
+    cl_glow_hold = obs.obs_data_get_bool(settings, "cl_glow_hold")
     cl_rcs = obs.obs_data_get_bool(settings, "cl_rcs")
     cl_triggerbot = obs.obs_data_get_bool(settings, "cl_triggerbot")
     cl_aimbot = obs.obs_data_get_bool(settings, "cl_aimbot")
@@ -160,8 +307,10 @@ function script_update(settings)
     cl_aimbot_rcs = obs.obs_data_get_bool(settings, "cl_aimbot_rcs")
     cl_aimbot_smooth = obs.obs_data_get_double(settings, "cl_aimbot_smooth")
     cl_aimbot_fov = obs.obs_data_get_double(settings, "cl_aimbot_fov") / 180.0
-    cl_aimbot_key = obs.obs_data_get_int(settings, "cl_aimbot_key")
-    cl_triggerbot_key = obs.obs_data_get_int(settings, "cl_triggerbot_key")
+    cl_aimbot_key = get_key_from_list(obs.obs_data_get_string(settings, "cl_aimbot_key"))
+    cl_triggerbot_key = get_key_from_list(obs.obs_data_get_string(settings, "cl_triggerbot_key"))
+    cl_glow_key = get_key_from_list(obs.obs_data_get_string(settings, "cl_glow_key"))
+    cl_bhop_key = get_key_from_list(obs.obs_data_get_string(settings, "cl_bhop_key"))
 end
 
 
@@ -193,7 +342,7 @@ function script_tick(seconds)
         end
 
         if cl_bhop then
-            if is_button_down(65) == 1 then
+            if is_button_down(cl_bhop_key) == 1 then
                 if (bit.band(get_flags(player), 1) == 1) then
                     mem_write_i32(m_dwForceJump, 5)
                 else
@@ -243,7 +392,7 @@ function glow_radar(player)
             end
 
             if cl_glow then
-                if cl_glow_always and is_button_down(cl_triggerbot_key) == 0 then
+                if cl_glow_hold and is_button_down(cl_glow_key) == 0 then
                     goto continue
                 end
                 local entity_health = get_health(entity) / 100.0

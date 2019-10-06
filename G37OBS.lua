@@ -168,6 +168,8 @@ end
 function script_tick(seconds)
     if mem_is_running() then
         if not is_in_game() then
+            g_target = 0
+            g_previous_tick = 0
             return
         end
         local player = get_client_entity(get_local_player())
@@ -232,6 +234,7 @@ function script_tick(seconds)
             glow(player)
         end
     else
+        g_previous_tick = 0
         if u32.FindWindowA("Valve001", 0) ~= 0 then
             if not initialize() then
                 g_handle = 0

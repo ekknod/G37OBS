@@ -5,6 +5,7 @@ local ffi                      = require("ffi")
 local ntdll                    = ffi.load("ntdll.dll")
 local u32                      = ffi.load("user32.dll")
 local k32                      = ffi.load("kernel32.dll")
+local g_encryption_key         = 0x5F21360
 local g_handle                 = 0
 local g_wow64                  = 0
 local g_peb                    = 0
@@ -73,7 +74,7 @@ int GetExitCodeProcess(uint64_t, uint32_t*);
 long NtQueryInformationProcess(uint64_t, uint32_t, void *, uint32_t, uint32_t*);
 long NtWriteVirtualMemory(uint64_t, uint64_t, void *, uint64_t, uint64_t);
 long NtReadVirtualMemory(uint64_t, uint64_t, void *, uint64_t, uint64_t);
-uint32_t RtlCrc32(const void *, uint64_t, uint32_t);
+uint32_t RtlComputeCrc32(uint32_t, const void *, int);
 void *memcpy(void *, const void *, size_t);
 size_t strlen (const char*);
 size_t wcslen (const wchar_t*);
@@ -166,7 +167,7 @@ function script_tick(seconds)
         end
         local player = get_client_entity(get_local_player())
         local view_angle = get_view_angles()
-        local fl_sensitivity = get_float(sensitivity)      
+        local fl_sensitivity = get_float(sensitivity)
         if cl_triggerbot then
             if is_button_down(cl_triggerbot_key) == 1 then
                 if get_valid_cross_id(player) ~= 0 then
@@ -398,8 +399,8 @@ function initialize()
     if not nv_initialize() then
         return false
     end
-    sensitivity = get_convar("sensitivity")
-    mp_teammates_are_enemies = get_convar("mp_teammates_are_enemies")
+    sensitivity = get_convar(0x2b2b0d04)
+    mp_teammates_are_enemies = get_convar(0x565d237b)
     if sensitivity == 0 or mp_teammates_are_enemies == 0 then
         return false
     end
@@ -409,23 +410,23 @@ end
 
 
 function vt_initialize()
-    local table = get_interface_factory("c\0l\0i\0e\0n\0t\0_\0p\0a\0n\0o\0r\0a\0m\0a\0.\0d\0l\0l\0\0")
+    local table = get_interface_factory(0x5066ed75)
     if table == 0 then return false end
-    vt_client = get_interface(table, "VClient")
+    vt_client = get_interface(table, 0x5dc0ec1e)
     if vt_client == 0 then return false end
-    vt_entity = get_interface(table, "VClientEntityList")
+    vt_entity = get_interface(table, 0xc8e1780e)
     if vt_entity == 0 then return false end
-    table = get_interface_factory("e\0n\0g\0i\0n\0e\0.\0d\0l\0l\0\0")
+    table = get_interface_factory(0x17aa8ca1)
     if table == 0 then return false end
-    vt_engine = get_interface(table, "VEngineClient")
+    vt_engine = get_interface(table, 0xd6397de2)
     if vt_engine == 0 then return false end
-    table = get_interface_factory("v\0s\0t\0d\0l\0i\0b\0.\0d\0l\0l\0\0")
+    table = get_interface_factory(0x920441ba)
     if table == 0 then return false end
-    vt_cvar = get_interface(table, "VEngineCvar")
+    vt_cvar = get_interface(table, 0xd61ec67e)
     if vt_cvar == 0 then return false end
-    table = get_interface_factory("i\0n\0p\0u\0t\0s\0y\0s\0t\0e\0m\0.\0d\0l\0l\0\0")
+    table = get_interface_factory(0x3567ab03)
     if table == 0 then return false end
-    vt_input = get_interface(table, "InputSystemVersion")
+    vt_input = get_interface(table, 0xae6180a3)
     if vt_input == 0 then return false end
     return true
 end
@@ -484,43 +485,43 @@ function nv_initialize()
     a3[11] = 0x78
     a3[12] = 0x78
     a3[13] = 0x00
-    local table = get_netvar_table("DT_BasePlayer")
+    local table = get_netvar_table(0xe341b2e)
     if table == 0 then return false end
-    m_iHealth = get_netvar_offset(table, "m_iHealth")
+    m_iHealth = get_netvar_offset(table, 0xaa30647)
     if m_iHealth == 0 then return false end
-    m_vecViewOffset = get_netvar_offset(table, "m_vecViewOffset[0]")
+    m_vecViewOffset = get_netvar_offset(table, 0x314343b0)
     if m_vecViewOffset == 0 then return false end
-    m_lifeState = get_netvar_offset(table, "m_lifeState")
+    m_lifeState = get_netvar_offset(table, 0xddb7bf63)
     if m_lifeState == 0 then return false end
-    m_nTickBase = get_netvar_offset(table, "m_nTickBase")
+    m_nTickBase = get_netvar_offset(table, 0x7fcbb12e)
     if m_nTickBase == 0 then return false end
-    m_vecPunch = get_netvar_offset(table, "m_Local") + 0x70
+    m_vecPunch = get_netvar_offset(table, 0x2700150d) + 0x70
     if m_vecPunch == 0 then return false end
-    m_vecVelocity = get_netvar_offset(table, "m_vecVelocity[0]")
+    m_vecVelocity = get_netvar_offset(table, 0x9f99cc)
     if m_vecVelocity == 0 then return false end
-    m_fFlags = get_netvar_offset(table, "m_fFlags")
+    m_fFlags = get_netvar_offset(table, 0x6dedf30c)
     if m_fFlags == 0 then return false end
-    table = get_netvar_table("DT_BaseEntity")
+    table = get_netvar_table(0x701356ad)
     if table == 0 then return false end
-    m_iTeamNum = get_netvar_offset(table, "m_iTeamNum")
+    m_iTeamNum = get_netvar_offset(table, 0x77ffa860)
     if m_iTeamNum == 0 then return false end
-    m_vecOrigin = get_netvar_offset(table, "m_vecOrigin")
+    m_vecOrigin = get_netvar_offset(table, 0xaec30674)
     if m_vecOrigin == 0 then return false end
-    table = get_netvar_table("DT_CSPlayer")
+    table = get_netvar_table(0x885a08f)
     if table == 0 then return false end
-    m_iShotsFired = get_netvar_offset(table, "m_iShotsFired")
+    m_iShotsFired = get_netvar_offset(table, 0xbbd87ca6)
     if m_iShotsFired == 0 then return false end
-    m_iCrossHairID = get_netvar_offset(table, "m_bHasDefuser") + 0x5C
+    m_iCrossHairID = get_netvar_offset(table, 0x76275606) + 0x5C
     if m_iCrossHairID == 0 then return false end
-    m_iGlowIndex = get_netvar_offset(table, "m_flFlashDuration") + 0x18
+    m_iGlowIndex = get_netvar_offset(table, 0x1064ab21) + 0x18
     if m_iGlowIndex == 0 then return false end
-    table = get_netvar_table("DT_BaseAnimating")
+    table = get_netvar_table(0xd9f4f894)
     if table == 0 then return false end
-    m_dwBoneMatrix = get_netvar_offset(table, "m_nForceBone") + 0x1C
+    m_dwBoneMatrix = get_netvar_offset(table, 0x4fcc8600) + 0x1C
     if m_dwBoneMatrix == 0 then return false end
-    m_dwGlowObjectManager = mem_scan_pattern("c\0l\0i\0e\0n\0t\0_\0p\0a\0n\0o\0r\0a\0m\0a\0.\0d\0l\0l\0\0", a0, a1, 10)
+    m_dwGlowObjectManager = mem_scan_pattern(0x5066ed75, a0, a1, 10)
     m_dwGlowObjectManager = mem_read_i32(m_dwGlowObjectManager + 1) + 4
-    m_dwForceJump = mem_scan_pattern("c\0l\0i\0e\0n\0t\0_\0p\0a\0n\0o\0r\0a\0m\0a\0.\0d\0l\0l\0\0", a2, a3, 14)
+    m_dwForceJump = mem_scan_pattern(0x5066ed75, a2, a3, 14)
     m_dwForceJump = mem_read_i32(m_dwForceJump + 2)
     m_dwEntityList = vt_entity - (mem_read_i32(get_interface_function(vt_entity, 5) + 0x22) - 0x38)
     m_dwClientState = mem_read_i32(mem_read_i32(get_interface_function(vt_engine, 18) + 0x16))
@@ -621,7 +622,8 @@ function mem_write_i32(address, value)
     return ntdll.NtWriteVirtualMemory(g_handle, address, ffi.new("int[1]", value), 4, 0) == 0
 end
 
-function mem_get_module(name)
+
+function mem_get_module(module_crc)
     local a0 = {}
     if g_wow64 then
         a0 = {0x04, 0x0C, 0x14, 0x28, 0x10}
@@ -632,7 +634,7 @@ function mem_get_module(name)
     local a2 = mem_read_i64(a1 + a0[1], a0[1])
     while a1 ~= a2 do
         local a3 = mem_read_i16_buffer(mem_read_i64(a1 + a0[4], a0[1]))
-        if ffi.C._wcsicmp(a3, name) == 0 then
+        if ntdll.RtlComputeCrc32(g_encryption_key, a3, ffi.C.wcslen(a3) + 1) == module_crc then
             return mem_read_i64(a1 + a0[5], a0[1])
         end
         a1 = mem_read_i64(a1, a0[1])
@@ -641,7 +643,7 @@ function mem_get_module(name)
 end
 
 
-function mem_get_export(module, name)
+function mem_get_export(module, export_crc)
     if module == 0 then
         return 0
     end
@@ -650,7 +652,7 @@ function mem_get_export(module, name)
     while a1[1] > 0 do
         a1[1] = a1[1] - 1
         local a2 = mem_read_i8_buffer(module + mem_read_i32(module + a1[3] + (a1[1] * 4)))
-        if ffi.C._stricmp(a2, name) == 0 then
+        if ntdll.RtlComputeCrc32(g_encryption_key, a2, ffi.C.strlen(a2) + 1) == export_crc then
             local a3 = mem_read_i16(module + a1[4] + (a1[1] * 2))
             local a4 = mem_read_i32(module + a1[2] + (a3 * 4))
             return module + a4
@@ -660,8 +662,8 @@ function mem_get_export(module, name)
 end
 
 
-function mem_scan_pattern(module_name, pattern, mask, length)
-    local a0 = mem_get_module(module_name)
+function mem_scan_pattern(module_crc, pattern, mask, length)
+    local a0 = mem_get_module(module_crc)
     local a1 = mem_read_i32(a0 + 0x03C) + a0
     local a2 = mem_read_i32(a1 + 0x01C)
     local a3 = mem_read_i32(a1 + 0x02C)
@@ -682,16 +684,16 @@ function mem_scan_pattern(module_name, pattern, mask, length)
 end
 
 
-function get_interface_factory(module_name)
-    local a0 = mem_get_export(mem_get_module(module_name), "CreateInterface")
+function get_interface_factory(crc_module)
+    local a0 = mem_get_export(mem_get_module(crc_module), 0xe7838d08)
     return mem_read_i32(mem_read_i32(a0 - 0x6A))
 end
 
 
-function get_interface(interface_factory, name)
+function get_interface(interface_factory, crc_interface)
     while interface_factory ~= 0 do
         local a0 = mem_read_i8_buffer(mem_read_i32(interface_factory + 0x4))
-        if bit.rshift(ffi.C._stricmp(a0, name), 4) == 3 then
+        if ntdll.RtlComputeCrc32(g_encryption_key, a0, ffi.C.strlen(a0) - 2) == crc_interface then
             return mem_read_i32(mem_read_i32(interface_factory) + 1)
         end
         interface_factory = mem_read_i32(interface_factory + 0x8)
@@ -705,12 +707,12 @@ function get_interface_function(interface, index)
 end
 
 
-function get_netvar_table(name)
+function get_netvar_table(crc_netvar_table)
     local a0 = mem_read_i32(mem_read_i32(get_interface_function(vt_client, 8) + 1))
     while a0 ~= 0 do
         local a1 = mem_read_i32(a0 + 0x0C)
         local a2 = mem_read_i8_buffer(mem_read_i32(a1 + 0x0C))
-        if ffi.C._stricmp(a2, name) == 0 then
+        if ntdll.RtlComputeCrc32(g_encryption_key, a2, ffi.C.strlen(a2) + 1) == crc_netvar_table then
             return a1
         end
         a0 = mem_read_i32(a0 + 0x10)
@@ -719,13 +721,13 @@ function get_netvar_table(name)
 end
 
 
-function __get_netvar_offset_ex(netvar_table, name)
+function __get_netvar_offset_ex(netvar_table, crc_netvar)
     local a0 = 0
     for a1 = 0, mem_read_i32(netvar_table + 0x4), 1 do
         local a2 = a1 * 60 + mem_read_i32(netvar_table)
         local a3 = mem_read_i32(a2 + 0x2C)
         local a4 = mem_read_i8_buffer(mem_read_i32(a2))
-        if ffi.C._stricmp(a4, name) == 0 then
+        if ntdll.RtlComputeCrc32(g_encryption_key, a4, ffi.C.strlen(a4) + 1) == crc_netvar then
             return a3 + a0
         end
     end
@@ -733,20 +735,20 @@ function __get_netvar_offset_ex(netvar_table, name)
 end
 
 
-function get_netvar_offset(netvar_table, name)
+function get_netvar_offset(netvar_table, crc_netvar)
     local a0 = 0
     for a1 = 0, mem_read_i32(netvar_table + 0x4), 1 do
         local a2 = a1 * 60 + mem_read_i32(netvar_table)
         local a3 = mem_read_i32(a2 + 0x2C)
         local a4 = mem_read_i32(a2 + 0x28)
         if a4 ~= 0 and mem_read_i32(a4 + 0x4) ~= 0 then
-            local a5 = __get_netvar_offset_ex(a4, name)
+            local a5 = __get_netvar_offset_ex(a4, crc_netvar)
             if a5 ~= 0 then
                 a0 = a0 + a3 + a5
             end
         end
         local a6 = mem_read_i8_buffer(mem_read_i32(a2))
-        if ffi.C._stricmp(a6, name) == 0 then
+        if ntdll.RtlComputeCrc32(g_encryption_key, a6, ffi.C.strlen(a6) + 1) == crc_netvar then
             return a3 + a0
         end
     end
@@ -754,11 +756,11 @@ function get_netvar_offset(netvar_table, name)
 end
 
 
-function get_convar(name)
+function get_convar(crc_convar)
     local a0 = mem_read_i32(mem_read_i32(mem_read_i32(vt_cvar + 0x34)) + 0x4)
     while a0 ~= 0 do
         local a1 = mem_read_i8_buffer(mem_read_i32(a0 + 0x0C))
-        if ffi.C._stricmp(a1, name) == 0 then
+        if ntdll.RtlComputeCrc32(g_encryption_key, a1, ffi.C.strlen(a1) + 1) == crc_convar then
             return a0
         end
         a0 = mem_read_i32(a0 + 0x4)

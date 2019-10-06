@@ -33,6 +33,7 @@ local m_vecPunch               = 0
 local m_vecVelocity            = 0
 local m_fFlags                 = 0
 local m_iTeamNum               = 0
+local m_bSpotted               = 0
 local m_vecOrigin              = 0
 local m_iShotsFired            = 0
 local m_iCrossHairID           = 0
@@ -49,6 +50,7 @@ local m_dwState                = 0
 local m_dwButton               = 0
 
 local cl_bhop                = false
+local cl_radar               = true
 local cl_glow                = true
 local cl_glow_always         = false
 local cl_rcs                 = false
@@ -97,6 +99,7 @@ end
 function script_properties()
     local props = obs.obs_properties_create()
     obs.obs_properties_add_bool(props, "cl_bhop", "Bhop")
+    obs.obs_properties_add_bool(props, "cl_radar", "Radar")
     obs.obs_properties_add_bool(props, "cl_glow", "Glow ESP")
     obs.obs_properties_add_bool(props, "cl_glow_always", "Glow ESP [Triggerbot Key]")
     obs.obs_properties_add_bool(props, "cl_rcs", "Recoil Control System")
@@ -128,6 +131,7 @@ end
 
 function script_defaults(settings)
     obs.obs_data_set_default_bool(settings, "cl_bhop", cl_bhop)
+    obs.obs_data_set_default_bool(settings, "cl_radar", cl_radar)
     obs.obs_data_set_default_bool(settings, "cl_glow", cl_glow)
     obs.obs_data_set_default_bool(settings, "cl_glow_always", cl_glow_always)
     obs.obs_data_set_default_bool(settings, "cl_rcs", cl_rcs)
@@ -145,6 +149,7 @@ end
 
 function script_update(settings)
     cl_bhop = obs.obs_data_get_bool(settings, "cl_bhop")
+    cl_radar = obs.obs_data_get_bool(settings, "cl_radar")
     cl_glow = obs.obs_data_get_bool(settings, "cl_glow")
     cl_glow_always = obs.obs_data_get_bool(settings, "cl_glow_always")
     cl_rcs = obs.obs_data_get_bool(settings, "cl_rcs")
@@ -182,6 +187,19 @@ function script_tick(seconds)
                     u32.mouse_event(0x0004, 0, 0, 0, 0)
                     g_mouse1_down = false
                 end
+            end
+        end
+
+        if cl_radar then
+            for i = 0, get_max_clients(), 1 do
+                local entity = get_client_entity(i)
+                if is_valid(entity) then
+                    if get_int(mp_teammates_are_enemies) == 0 and get_team_num(player) == get_team_num(entity) then
+                        goto continue
+                    end
+                    mem_write_i8(entity + m_bSpotted, 1)
+                end
+                ::continue::
             end
         end
 
@@ -505,6 +523,8 @@ function nv_initialize()
     if table == 0 then return false end
     m_iTeamNum = get_netvar_offset(table, 0x77ffa860)
     if m_iTeamNum == 0 then return false end
+    m_bSpotted = get_netvar_offset(table, 0xcf0118b2)
+    if m_bSpotted == 0 then return false end
     m_vecOrigin = get_netvar_offset(table, 0xaec30674)
     if m_vecOrigin == 0 then return false end
     table = get_netvar_table(0x885a08f)

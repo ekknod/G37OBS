@@ -5,6 +5,7 @@ local ffi                      = require("ffi")
 local ntdll                    = ffi.load("ntdll.dll")
 local u32                      = ffi.load("user32.dll")
 local k32                      = ffi.load("kernel32.dll")
+
 local g_encryption_key         = 0x5F21360
 local g_handle                 = 0
 local g_wow64                  = 0
@@ -183,6 +184,7 @@ local g_key_list = {
     {"MOUSE_WHEEL_DOWN", 113}
 }
 
+
 -- C imports --
 ffi.cdef[[
 int Beep(uint32_t, uint32_t);
@@ -195,22 +197,15 @@ long NtQueryInformationProcess(uint64_t, uint32_t, void *, uint32_t, uint32_t*);
 long NtWriteVirtualMemory(uint64_t, uint64_t, void *, uint64_t, uint64_t);
 long NtReadVirtualMemory(uint64_t, uint64_t, void *, uint64_t, uint64_t);
 uint32_t RtlComputeCrc32(uint32_t, const void *, int);
-void *memcpy(void *, const void *, size_t);
 size_t strlen (const char*);
-size_t wcslen (const wchar_t*);
-int _wcsicmp(const wchar_t *, const char*);
+size_t wcslen (const char*);
 int _stricmp (const char *, const char *);
 uint64_t FindWindowA(const char *, uint64_t);
-double sin(double);
-double cos(double);
-double sqrt(double);
-double atan2(double, double);
-double fabs(double);
 ]]
 
 
 function script_description()
-    return "<b>G37OBS v1.13</b><hr>ekknod@2019"
+    return "<b>G37OBS v1.131</b><hr>ekknod@2019"
 end
 
 
@@ -228,7 +223,6 @@ function script_properties()
     obs.obs_properties_add_bool(props, "cl_aimbot_rcs", "Aimbot No Recoil")
     obs.obs_properties_add_float_slider(props, "cl_aimbot_smooth", "Aimbot Smooth", 0.0, 50.0, 0.25)
     obs.obs_properties_add_float_slider(props, "cl_aimbot_fov", "Aimbot Fov", 0.0, 180.0, 0.25)
-
     local aimbot_keys = obs.obs_properties_add_list(props,  "cl_aimbot_key",
         "Aimbot", obs.OBS_COMBO_TYPE_LIST, obs.OBS_COMBO_FORMAT_STRING)
     local trigger_keys = obs.obs_properties_add_list(props,  "cl_triggerbot_key",
@@ -237,7 +231,7 @@ function script_properties()
         "Glow ESP", obs.OBS_COMBO_TYPE_LIST, obs.OBS_COMBO_FORMAT_STRING)
     local bhop_keys = obs.obs_properties_add_list(props,  "cl_bhop_key",
         "Bhop", obs.OBS_COMBO_TYPE_LIST, obs.OBS_COMBO_FORMAT_STRING)
-    for i = 1, #g_key_list, 1 do
+    for i = 1, #g_key_list do
         obs.obs_property_list_add_string(aimbot_keys, g_key_list[i][1], g_key_list[i][1])
         obs.obs_property_list_add_string(trigger_keys, g_key_list[i][1], g_key_list[i][1])
         obs.obs_property_list_add_string(glow_key, g_key_list[i][1], g_key_list[i][1])
@@ -284,8 +278,8 @@ function script_defaults(settings)
 end
 
 
-function get_key_from_list(name)
-    for i = 1, #g_key_list, 1 do
+local function get_key_from_list(name)
+    for i = 1, #g_key_list do
         if g_key_list[i][1] == name then
             return g_key_list[i][2]
         end
@@ -380,7 +374,7 @@ end
 
 function glow_radar(player)
     local glow_pointer = mem_read_i32(m_dwGlowObjectManager)
-    for i = 0, get_max_clients(), 1 do
+    for i = 0, get_max_clients() do
         local entity = get_client_entity(i)
         if is_valid(entity) then
             if get_int(mp_teammates_are_enemies) == 0 and get_team_num(player) == get_team_num(entity) then
@@ -467,7 +461,7 @@ end
 
 function aimbot_get_best_target(angles, player)
     local best_fov = 9999.00
-    for i = 0, get_max_clients(), 1 do
+    for i = 0, get_max_clients() do
         local entity = get_client_entity(i)
         if is_valid(entity) == true then
             if get_int(mp_teammates_are_enemies) == 0 and get_team_num(player) == get_team_num(entity) then
@@ -481,7 +475,7 @@ function aimbot_get_best_target(angles, player)
                     g_target_bone = 8
                 end
             else
-                for j = 1, 6, 1 do
+                for j = 1, 6 do
                     local fov = get_fov(angles, aimbot_get_target_angle(player, entity, g_bones[j]))
                     if fov < best_fov then
                         best_fov = fov
@@ -517,11 +511,11 @@ function aimbot_aim_at(player, entity, sensitivity, angles, angle)
     elseif x < -180.0 then
         x = x + 360.0
     end
-    if (ntdll.fabs(x) / 180.0) >= cl_aimbot_fov then
+    if (math.abs(x) / 180.0) >= cl_aimbot_fov then
         g_target = 0
         return
     end
-    if (ntdll.fabs(y) / 89.0) >= cl_aimbot_fov then
+    if (math.abs(y) / 89.0) >= cl_aimbot_fov then
         g_target = 0
         return
     end
@@ -596,58 +590,6 @@ end
 
 
 function nv_initialize()
-    local a0 = ffi.new("unsigned char[?]", 10)
-    local a1 = ffi.new("unsigned char[?]", 10)
-    local a2 = ffi.new("unsigned char[?]", 14)
-    local a3 = ffi.new("unsigned char[?]", 14)
-    a0[00] = 0xA1
-    a0[01] = 0x00
-    a0[02] = 0x00
-    a0[03] = 0x00
-    a0[04] = 0x00
-    a0[05] = 0xA8
-    a0[06] = 0x01
-    a0[07] = 0x75
-    a0[08] = 0x4B
-    a0[09] = 0x00
-    a1[00] = 0x78
-    a1[01] = 0x3f
-    a1[02] = 0x3f
-    a1[03] = 0x3f
-    a1[04] = 0x3f
-    a1[05] = 0x78
-    a1[06] = 0x78
-    a1[07] = 0x78
-    a1[08] = 0x78
-    a1[09] = 0x00
-    a2[00] = 0x8B
-    a2[01] = 0x0D
-    a2[02] = 0x00
-    a2[03] = 0x00
-    a2[04] = 0x00
-    a2[05] = 0x00
-    a2[06] = 0x8B
-    a2[07] = 0xD6
-    a2[08] = 0x8B
-    a2[09] = 0xC1
-    a2[10] = 0x83
-    a2[11] = 0xCA
-    a2[12] = 0x02
-    a2[13] = 0x00
-    a3[00] = 0x78
-    a3[01] = 0x78
-    a3[02] = 0x3f
-    a3[03] = 0x3f
-    a3[04] = 0x3f
-    a3[05] = 0x3f
-    a3[06] = 0x78
-    a3[07] = 0x78
-    a3[08] = 0x78
-    a3[09] = 0x78
-    a3[10] = 0x78
-    a3[11] = 0x78
-    a3[12] = 0x78
-    a3[13] = 0x00
     local table = get_netvar_table(0xe341b2e)
     if table == 0 then return false end
     m_iHealth = get_netvar_offset(table, 0xaa30647)
@@ -684,11 +626,11 @@ function nv_initialize()
     if table == 0 then return false end
     m_dwBoneMatrix = get_netvar_offset(table, 0x4fcc8600) + 0x1C
     if m_dwBoneMatrix == 0 then return false end
-    m_dwGlowObjectManager = mem_scan_pattern(0x5066ed75, a0, a1, 10)
+    m_dwGlowObjectManager = mem_scan_pattern(0x5066ed75, "\xA1\x00\x00\x00\x00\xA8\x01\x75\x4B", "x????xxxx", 10)
     if m_dwGlowObjectManager == 0 then return false end
     m_dwGlowObjectManager = mem_read_i32(m_dwGlowObjectManager + 1) + 4
     if m_dwGlowObjectManager == 0 then return false end
-    m_dwForceJump = mem_scan_pattern(0x5066ed75, a2, a3, 14)
+    m_dwForceJump = mem_scan_pattern(0x5066ed75, "\x8B\x0D\x00\x00\x00\x00\x8B\xD6\x8B\xC1\x83\xCA\x02", "xx????xxxxxxx", 14)
     if m_dwForceJump == 0 then return false end
     m_dwForceJump = mem_read_i32(m_dwForceJump + 2)
     if m_dwForceJump == 0 then return false end
@@ -726,23 +668,9 @@ function mem_is_running()
 end
 
 
-function mem_read_bytes(address, length)
-    local buffer = ffi.new("unsigned char[?]", length)
+function mem_read(address, length)
+    local buffer = ffi.new("char[?]", length)
     ntdll.NtReadVirtualMemory(g_handle, address, buffer, length, 0)
-    return buffer
-end
-
-
-function mem_read_i8_buffer(address)
-    local buffer = ffi.new("char[120]", 0)
-    ntdll.NtReadVirtualMemory(g_handle, address, buffer, 120, 0)
-    return buffer
-end
-
-
-function mem_read_i16_buffer(address)
-    local buffer = ffi.new("short[120]", 0)
-    ntdll.NtReadVirtualMemory(g_handle, address, buffer, 240, 0)
     return buffer
 end
 
@@ -812,7 +740,7 @@ function mem_get_module(module_crc)
     local a1 = mem_read_i64(mem_read_i64(g_peb + a0[2], a0[1]) + a0[3], a0[1])
     local a2 = mem_read_i64(a1 + a0[1], a0[1])
     while a1 ~= a2 do
-        local a3 = mem_read_i16_buffer(mem_read_i64(a1 + a0[4], a0[1]))
+        local a3 = mem_read(mem_read_i64(a1 + a0[4], a0[1]), 240)
         if ntdll.RtlComputeCrc32(g_encryption_key, a3, ffi.C.wcslen(a3) + 1) == module_crc then
             return mem_read_i64(a1 + a0[5], a0[1])
         end
@@ -830,7 +758,7 @@ function mem_get_export(module, export_crc)
     local a1 = {mem_read_i32(a0 + 0x18), mem_read_i32(a0 + 0x1C), mem_read_i32(a0 + 0x20), mem_read_i32(a0 + 0x24)}
     while a1[1] > 0 do
         a1[1] = a1[1] - 1
-        local a2 = mem_read_i8_buffer(module + mem_read_i32(module + a1[3] + (a1[1] * 4)))
+        local a2 = mem_read(module + mem_read_i32(module + a1[3] + (a1[1] * 4)), 120)
         if ntdll.RtlComputeCrc32(g_encryption_key, a2, ffi.C.strlen(a2) + 1) == export_crc then
             local a3 = mem_read_i16(module + a1[4] + (a1[1] * 2))
             local a4 = mem_read_i32(module + a1[2] + (a3 * 4))
@@ -846,17 +774,19 @@ function mem_scan_pattern(module_crc, pattern, mask, length)
     local a1 = mem_read_i32(a0 + 0x03C) + a0
     local a2 = mem_read_i32(a1 + 0x01C)
     local a3 = mem_read_i32(a1 + 0x02C)
-    local a4 = mem_read_bytes(a0 + a3, a2)
-    for a5 = 0, a2, 1 do
-        local a6 = 0
-        for a7 = 0, length, 1 do
-            if mask[a7] == 0x78 and a4[a5 + a7] ~= pattern[a7] then
+    local a4 = mem_read(a0 + a3, a2)
+    local a5 = ffi.cast("char *", pattern)
+    local a6 = ffi.cast("char *", mask)
+    for a7 = 0, a2 do
+        local a8 = 0
+        for a9 = 0, length do
+            if a6[a9] == 0x78 and a4[a7 + a9] ~= a5[a9] then
                 break
             end
-            a6 = a6 + 1
+            a8 = a8 + 1
         end
-        if mask[a6] == 0 then
-            return a0 + a3 + a5
+        if a8 - 1 == length then
+            return a0 + a3 + a7
         end
     end
     return 0
@@ -871,7 +801,7 @@ end
 
 function get_interface(interface_factory, crc_interface)
     while interface_factory ~= 0 do
-        local a0 = mem_read_i8_buffer(mem_read_i32(interface_factory + 0x4))
+        local a0 = mem_read(mem_read_i32(interface_factory + 0x4), 120)
         if ntdll.RtlComputeCrc32(g_encryption_key, a0, ffi.C.strlen(a0) - 2) == crc_interface then
             return mem_read_i32(mem_read_i32(interface_factory) + 1)
         end
@@ -890,7 +820,7 @@ function get_netvar_table(crc_netvar_table)
     local a0 = mem_read_i32(mem_read_i32(get_interface_function(vt_client, 8) + 1))
     while a0 ~= 0 do
         local a1 = mem_read_i32(a0 + 0x0C)
-        local a2 = mem_read_i8_buffer(mem_read_i32(a1 + 0x0C))
+        local a2 = mem_read(mem_read_i32(a1 + 0x0C), 120)
         if ntdll.RtlComputeCrc32(g_encryption_key, a2, ffi.C.strlen(a2) + 1) == crc_netvar_table then
             return a1
         end
@@ -902,10 +832,10 @@ end
 
 function __get_netvar_offset_ex(netvar_table, crc_netvar)
     local a0 = 0
-    for a1 = 0, mem_read_i32(netvar_table + 0x4), 1 do
+    for a1 = 0, mem_read_i32(netvar_table + 0x4) do
         local a2 = a1 * 60 + mem_read_i32(netvar_table)
         local a3 = mem_read_i32(a2 + 0x2C)
-        local a4 = mem_read_i8_buffer(mem_read_i32(a2))
+        local a4 = mem_read(mem_read_i32(a2), 120)
         if ntdll.RtlComputeCrc32(g_encryption_key, a4, ffi.C.strlen(a4) + 1) == crc_netvar then
             return a3 + a0
         end
@@ -916,7 +846,7 @@ end
 
 function get_netvar_offset(netvar_table, crc_netvar)
     local a0 = 0
-    for a1 = 0, mem_read_i32(netvar_table + 0x4), 1 do
+    for a1 = 0, mem_read_i32(netvar_table + 0x4) do
         local a2 = a1 * 60 + mem_read_i32(netvar_table)
         local a3 = mem_read_i32(a2 + 0x2C)
         local a4 = mem_read_i32(a2 + 0x28)
@@ -926,7 +856,7 @@ function get_netvar_offset(netvar_table, crc_netvar)
                 a0 = a0 + a3 + a5
             end
         end
-        local a6 = mem_read_i8_buffer(mem_read_i32(a2))
+        local a6 = mem_read(mem_read_i32(a2), 120)
         if ntdll.RtlComputeCrc32(g_encryption_key, a6, ffi.C.strlen(a6) + 1) == crc_netvar then
             return a3 + a0
         end
@@ -938,7 +868,7 @@ end
 function get_convar(crc_convar)
     local a0 = mem_read_i32(mem_read_i32(mem_read_i32(vt_cvar + 0x34)) + 0x4)
     while a0 ~= 0 do
-        local a1 = mem_read_i8_buffer(mem_read_i32(a0 + 0x0C))
+        local a1 = mem_read(mem_read_i32(a0 + 0x0C), 120)
         if ntdll.RtlComputeCrc32(g_encryption_key, a1, ffi.C.strlen(a1) + 1) == crc_convar then
             return a0
         end
@@ -949,23 +879,17 @@ end
 
 
 function get_int(convar)
-    local a0 = ffi.new("uint32_t[1]", 0)
-    local a1 = bit.bxor(mem_read_i32(convar + 0x30), convar)
-    ntdll.memcpy(a0, ffi.new("uint32_t[1]", a1), 4)
-    return a0[0]
+    return ffi.new("uint32_t[1]", bit.bxor(mem_read_i32(convar + 0x30), convar))[0]
 end
 
 
 function get_float(convar)
-    local a0 = ffi.new("float[1]", 0)
-    local a1 = bit.bxor(mem_read_i32(convar + 0x2C), convar)
-    ntdll.memcpy(a0, ffi.new("uint32_t[1]", a1), 4)
-    return a0[0]
+    return ffi.cast("float*", ffi.new("uint32_t[1]", bit.bxor(mem_read_i32(convar + 0x2C), convar)))[0]
 end
 
 
 function is_button_down(button)
-    a0 = mem_read_i32(vt_input + (bit.rshift(button, 5) * 4) + m_dwButton)
+    local a0 = mem_read_i32(vt_input + (bit.rshift(button, 5) * 4) + m_dwButton)
     return bit.band((bit.rshift(a0, (bit.band(button, 31)))), 1)
 end
 
@@ -1069,7 +993,7 @@ end
 function get_velocity(entity)
     local x = mem_read_float(entity + m_vecVelocity)
     local y = mem_read_float(entity + m_vecVelocity + 4)
-    return ntdll.sqrt(x * x + y * y)
+    return math.sqrt(x * x + y * y)
 end
 
 
@@ -1144,7 +1068,7 @@ end
 
 
 function sincos(radians)
-    return {ntdll.sin(radians), ntdll.cos(radians)}
+    return {math.sin(radians), math.cos(radians)}
 end
 
 
@@ -1166,7 +1090,7 @@ end
 
 
 function angle_normalize(angles)
-    local radius = 1.0 / (ntdll.sqrt(angles[1] * angles[1] + angles[2] * angles[2] + angles[3] * angles[3]) + 1.192092896e-07)
+    local radius = 1.0 / (math.sqrt(angles[1] * angles[1] + angles[2] * angles[2] + angles[3] * angles[3]) + 1.192092896e-07)
     angles[1] = angles[1] * radius
     angles[2] = angles[2] * radius
     angles[3] = angles[3] * radius
@@ -1184,12 +1108,12 @@ function vec_angles(forward)
             pitch = 90.0
         end
     else
-        yaw = ntdll.atan2(forward[2], forward[1]) * 57.295779513
+        yaw = math.atan2(forward[2], forward[1]) * 57.295779513
         if yaw < 0.00 then
             yaw = yaw + 360.0
         end
-        tmp = ntdll.sqrt(forward[1] * forward[1] + forward[2] * forward[2])
-        pitch = ntdll.atan2(-forward[3], tmp) * 57.295779513
+        tmp = math.sqrt(forward[1] * forward[1] + forward[2] * forward[2])
+        pitch = math.atan2(-forward[3], tmp) * 57.295779513
         if pitch < 0.00 then
             pitch = pitch + 360.0
         end

@@ -1029,7 +1029,7 @@ end
 -- fuck you obs --
 -- https://github.com/obsproject/obs-studio/commit/0acf86ba046efd4bc37ed9931cc2c0f4bc74f9dd#diff-154ed4865eac33aca4ca5db04f5fd70c
 function patch_flags(access_mask)
-    local address = k32.GetModuleHandleA("win-capture.dll") + 0x58AE
+    local address = k32.GetModuleHandleA("win-capture.dll") + 0x48AE
     return k32.WriteProcessMemory(-1, address, ffi.new("int[1]", access_mask), 4, 0)
 end
 

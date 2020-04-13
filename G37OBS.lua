@@ -205,7 +205,7 @@ uint64_t FindWindowA(const char *, uint64_t);
 
 
 function script_description()
-    return "<b>G37OBS v1.131</b><hr>ekknod@2019"
+    return "<b>G37OBS v1.131</b><hr>ekknod@2019 | kernelaim.com"
 end
 
 

@@ -205,7 +205,7 @@ uint64_t FindWindowA(const char *, uint64_t);
 
 
 function script_description()
-    return "<b>G37OBS v1.131</b><hr>ekknod@2019 | ekknod.xyz"
+    return "<b>https://ekknod.xyz - G37OBS</b><hr>ekknod@2019"
 end
 
 
@@ -567,7 +567,7 @@ end
 
 
 function vt_initialize()
-    local table = get_interface_factory(0x5066ed75)
+    local table = get_interface_factory(0x2e96d8ca)
     if table == 0 then return false end
     vt_client = get_interface(table, 0x5dc0ec1e)
     if vt_client == 0 then return false end
@@ -626,11 +626,11 @@ function nv_initialize()
     if table == 0 then return false end
     m_dwBoneMatrix = get_netvar_offset(table, 0x4fcc8600) + 0x1C
     if m_dwBoneMatrix == 0 then return false end
-    m_dwGlowObjectManager = mem_scan_pattern(0x5066ed75, "\xA1\x00\x00\x00\x00\xA8\x01\x75\x4B", "x????xxxx", 10)
+    m_dwGlowObjectManager = mem_scan_pattern(0x2e96d8ca, "\xA1\x00\x00\x00\x00\xA8\x01\x75\x4B", "x????xxxx", 10)
     if m_dwGlowObjectManager == 0 then return false end
     m_dwGlowObjectManager = mem_read_i32(m_dwGlowObjectManager + 1) + 4
     if m_dwGlowObjectManager == 0 then return false end
-    m_dwForceJump = mem_scan_pattern(0x5066ed75, "\x8B\x0D\x00\x00\x00\x00\x8B\xD6\x8B\xC1\x83\xCA\x02", "xx????xxxxxxx", 14)
+    m_dwForceJump = mem_scan_pattern(0x2e96d8ca, "\x8B\x0D\x00\x00\x00\x00\x8B\xD6\x8B\xC1\x83\xCA\x02", "xx????xxxxxxx", 14)
     if m_dwForceJump == 0 then return false end
     m_dwForceJump = mem_read_i32(m_dwForceJump + 2)
     if m_dwForceJump == 0 then return false end

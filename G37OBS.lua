@@ -391,12 +391,12 @@ function glow_radar(player)
                 end
                 local entity_health = get_health(entity) / 100.0
                 local index = mem_read_i32(entity + m_iGlowIndex) * 0x38
-                mem_write_float(glow_pointer + index + 0x04, 1.0 - entity_health)  -- r
-                mem_write_float(glow_pointer + index + 0x08, entity_health)        -- g
-                mem_write_float(glow_pointer + index + 0x0C, 0.0)                  -- b
-                mem_write_float(glow_pointer + index + 0x10, 0.8)                  -- a
-                mem_write_i8(glow_pointer + index + 0x24, 1)
-                mem_write_i8(glow_pointer + index + 0x25, 0)
+                mem_write_float(glow_pointer + index + 0x08, 1.0 - entity_health)  -- r
+                mem_write_float(glow_pointer + index + 0x0C, entity_health)        -- g
+                mem_write_float(glow_pointer + index + 0x10, 0.0)                  -- b
+                mem_write_float(glow_pointer + index + 0x14, 0.8)                  -- a
+                mem_write_i8(glow_pointer + index + 0x28, 1)
+                mem_write_i8(glow_pointer + index + 0x29, 0)
             end
         end
         ::continue::

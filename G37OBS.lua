@@ -288,7 +288,7 @@ local function get_key_from_list(name)
 end
 
 
-function script_update(settings)    
+function script_update(settings)
     cl_bhop = obs.obs_data_get_bool(settings, "cl_bhop")
     cl_radar = obs.obs_data_get_bool(settings, "cl_radar")
     cl_glow = obs.obs_data_get_bool(settings, "cl_glow")
@@ -634,8 +634,8 @@ function nv_initialize()
     if m_dwForceJump == 0 then return false end
     m_dwForceJump = mem_read_i32(m_dwForceJump + 2)
     if m_dwForceJump == 0 then return false end
-    m_dwEntityList = vt_entity - (mem_read_i32(get_interface_function(vt_entity, 5) + 0x22) - 0x38)
-    m_dwClientState = mem_read_i32(mem_read_i32(get_interface_function(vt_engine, 18) + 0x16))
+    m_dwEntityList = vt_entity - (mem_read_i32(get_interface_function(vt_entity, 6) + 0x22) - 0x38)
+    m_dwClientState = mem_read_i32(mem_read_i32(get_interface_function(vt_engine, 18) + 0x21))
     m_dwGetLocalPlayer = mem_read_i32(get_interface_function(vt_engine, 12) + 0x16)
     m_dwViewAngles = mem_read_i32(get_interface_function(vt_engine, 19) + 0x1D3)
     m_dwMaxClients = mem_read_i32(get_interface_function(vt_engine, 20) + 0x07)

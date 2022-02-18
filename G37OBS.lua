@@ -640,7 +640,7 @@ function nv_initialize()
     m_dwViewAngles = mem_read_i32(get_interface_function(vt_engine, 19) + 0x191)
     m_dwMaxClients = mem_read_i32(get_interface_function(vt_engine, 20) + 0x07)
     m_dwState = mem_read_i32(get_interface_function(vt_engine, 26) + 0x07)
-    m_dwButton = mem_read_i32(get_interface_function(vt_input, 15) + 0x21D)
+    m_dwButton = mem_read_i32(get_interface_function(vt_input, 15) + 0x1B)
     return true
 end
 

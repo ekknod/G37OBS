@@ -2,7 +2,7 @@
 obs-studio plugin for csgo
 
 # Requirement
-* Latest version of obs-studio x64, current [25.0.8]
+* obs-studio x64 [27.1.3]
 
 # Features
 * Recoil Control System
